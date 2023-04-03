@@ -6,6 +6,6 @@ const EmailRouter = Router({ mergeParams: true });
 /*CRUD de los lugares del usuario*/
 
 
-EmailRouter.get('/send', EmailController.sendEmail);
+EmailRouter.post('/newUser/temp', EmailController.sendNewTemporalUser);
 
 module.exports = EmailRouter;
