@@ -10,7 +10,7 @@ const emails = {
                         <img src="https://drive.google.com/uc?export=view&id=1RozbxwB1dQ0SApHIL-T17H1-35j0zkQU" height="60px"/>
                     </div>
                 </div>
-                <h1 style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #8668a5; font-weight: 300; font-size: 45px; margin: 0; width: 100%;"><span style="font-weight: 800;">Fuiste invitado a Snaqui</span><span style="font-weight: 800;">!</span></h1>
+                <h1 style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #8668a5; font-weight: 300; font-size: 45px; margin: 0; width: 100%;"><span style="font-weight: 800;"> Bienvenidos al Club de Beneficios de Snaqui</span><span style="font-weight: 800;">!</span></h1>
                 <!-- <h2 style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #8668a5; font-weight: 300; font-size: 45px; margin: 0; width: 100%;"><span style="font-weight: 800;">.watcha got</span style="font-weight: 800;"><span></span>
                     </h2> -->
                 
@@ -40,13 +40,10 @@ const emails = {
                     style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;color: #939393; font-weight: 400; font-size: 15px; margin-bottom: 20px;">
                     Entra y se parte del equipo</div>
         
-                <div
-                    style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;color: #939393; font-weight: 400; font-size: 15px; margin-bottom: 20px;">
-                    {direccion}.
-                </div>
+
         
-                <a href="mailto:smartfood4uchile@gmail.com?subject=I%20have%20a%20doubt%20about%Snaqui"
-                    style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: 400; font-size: 15px; margin-bottom: 20px; text-decoration: none;">Escribenos a smartfood4uchile@gmail.com
+                <a href="mailto:ventas@snaqui.cl?subject=I%20have%20a%20doubt%20about%Snaqui"
+                    style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: 400; font-size: 15px; margin-bottom: 20px; text-decoration: none;">Escribenos a ventas@snaqui.cl
                 </a>
             </div>
         </div>
@@ -55,3 +52,9 @@ const emails = {
 
 module.exports = emails
 //<a href="mailto:angelo298.alh@gmail.com" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: 400; font-size: 15px; margin-bottom: 20px;">Link prueba</a>
+/*
+                <div
+                    style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;color: #939393; font-weight: 400; font-size: 15px; margin-bottom: 20px;">
+                    {direccion}.
+                </div>
+*/
