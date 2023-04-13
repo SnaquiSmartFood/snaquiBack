@@ -112,6 +112,34 @@ JumpsellerController.updateProduct = async (req, res, next) => {
     });
   }
 };
+/**
+ * Get country, regions or municipialy from jumpseller
+ *
+ */
+JumpsellerController.getCountryRegionMunicipallyJumpseller = async (req, res, next) => {
+  const { country_code,region_code } = req.params;
+  let url = `/countries`;
+  if(country_code){
+    url += `/${country_code}/regions`
+  }
+  if(region_code){
+    url += `/${region_code}/municipalities`
+  }
+  try {
+    const { data, status } = await jumpsaleApi.get(`${url}.json`);
+    const formatedResponse = responseFormater({
+      code: status,
+      data: data,
+    });
+    res.status(formatedResponse.meta.statusCode).json(formatedResponse);
+  } catch (error) {
+    next({
+      statusCode: 500,
+      message: error.message,
+      type: "E_ERROR",
+    });
+  }
+};
 
 /**
  *

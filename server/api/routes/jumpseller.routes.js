@@ -20,4 +20,11 @@ JumpsellerRouter.post('/customers', JumpsellerController.setJumpsellerCustomer);
 
 JumpsellerRouter.post('/orders', JumpsellerController.createOrderJumpseller);
 
+//https://api.jumpseller.com/v1/countries/{country_code}/regions/{region_code}/municipalities.json
+
+JumpsellerRouter.get('/country/:country_code/:region_code', JumpsellerController.getCountryRegionMunicipallyJumpseller);
+JumpsellerRouter.get('/country/:country_code', JumpsellerController.getCountryRegionMunicipallyJumpseller);
+JumpsellerRouter.get('/country', JumpsellerController.getCountryRegionMunicipallyJumpseller);
+
+
 module.exports = JumpsellerRouter;
