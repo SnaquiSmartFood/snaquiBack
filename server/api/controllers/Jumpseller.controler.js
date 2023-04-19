@@ -116,14 +116,18 @@ JumpsellerController.updateProduct = async (req, res, next) => {
  * Get country, regions or municipialy from jumpseller
  *
  */
-JumpsellerController.getCountryRegionMunicipallyJumpseller = async (req, res, next) => {
-  const { country_code,region_code } = req.params;
+JumpsellerController.getCountryRegionMunicipallyJumpseller = async (
+  req,
+  res,
+  next
+) => {
+  const { country_code, region_code } = req.params;
   let url = `/countries`;
-  if(country_code){
-    url += `/${country_code}/regions`
+  if (country_code) {
+    url += `/${country_code}/regions`;
   }
-  if(region_code){
-    url += `/${region_code}/municipalities`
+  if (region_code) {
+    url += `/${region_code}/municipalities`;
   }
   try {
     const { data, status } = await jumpsaleApi.get(`${url}.json`);
@@ -141,6 +145,42 @@ JumpsellerController.getCountryRegionMunicipallyJumpseller = async (req, res, ne
   }
 };
 
+/**
+ *
+ * Create a categorie the information of a jumpseller product by id
+ * @returns
+ */
+JumpsellerController.createCustomerCategory = async (req, res, next) => {
+  //https://api.jumpseller.com/v1/customer_categories.json
+  let url = `/customer_categories.json`;
+  const { name } = req.body;
+  if (!name) {
+    next({
+      statusCode: 505,
+      message: "No name defined",
+      type: "E_ERROR",
+    });
+    return;
+  }
+  try {
+    const { data, status = 200 } = await jumpsaleApi.post(`${url}`, {
+      customer_category: {
+        name: `${name}`.toLowerCase(),
+      },
+    });
+    const formatedResponse = responseFormater({
+      code: status,
+      data: data.customer_category,
+    });
+    res.status(formatedResponse.meta.statusCode).json(formatedResponse);
+  } catch (error) {
+    next({
+      statusCode: 500,
+      message: error.message,
+      type: "E_ERROR",
+    });
+  }
+};
 /**
  *
  * Create a categorie the information of a jumpseller product by id
@@ -297,6 +337,7 @@ JumpsellerController.setJumpsellerCustomer = async (req, res, next) => {
     surname,
     shipping_address,
     billing_address,
+    customer_category=[]
   } = req.body;
   let url = "/customers";
   try {
@@ -307,8 +348,8 @@ JumpsellerController.setJumpsellerCustomer = async (req, res, next) => {
         password,
         name,
         surname,
-        //status: "approved",
-        //customer_category: [0],
+        status: "approved",
+        customer_category: customer_category.map(it=>(parseInt(it))),
       },
     };
     /*
@@ -364,7 +405,7 @@ JumpsellerController.setJumpsellerCustomer = async (req, res, next) => {
  *
  */
 JumpsellerController.updateJumpsellerCustomer = async (req, res, next) => {
-  const { phone, name, surname, shipping_address, billing_address } = req.body;
+  const { phone, name, surname, shipping_address, billing_address,customer_category } = req.body;
   const { id } = req.params;
   let url = `/customers/${id}`;
   try {
@@ -386,6 +427,9 @@ JumpsellerController.updateJumpsellerCustomer = async (req, res, next) => {
     if (shipping_address) {
       datatoSend.customer.shipping_address = shipping_address;
     }
+    if (customer_category) {
+      datatoSend.customer.customer_category = customer_category.map(i=>(parseInt(i)));
+    }
     const { data, status = 200 } = await jumpsaleApi.put(
       `${url}.json`,
       datatoSend
@@ -403,27 +447,315 @@ JumpsellerController.updateJumpsellerCustomer = async (req, res, next) => {
     });
   }
 };
+//orders-------------------------------------------------------------------------------------------------------------
 
+
+/**
+ * get a order
+ *
+ */
+JumpsellerController.getOrder = async (req, res, next) => {
+
+  const {id} = req.params
+   let url = `/orders/${id}`;
+   try {
+     //configuration of the target
+     const { data, status = 200 } = await jumpsaleApi.get(
+       `${url}.json`,
+     );
+     const formatedResponse = responseFormater({
+       code: status,
+       data: data.order,
+     });
+     res.status(formatedResponse.meta.statusCode).json(formatedResponse);
+   } catch (error) {
+     next({
+       statusCode: 500,
+       message: error.message,
+       type: "E_ERROR",
+     });
+   }
+ };
 /**
  * Create a order
  *
  */
 JumpsellerController.createOrderJumpseller = async (req, res, next) => {
-  const { status = "Pending Payment", customerID, products = [] } = req.body;
+  const { status = "Pending Payment", customerID, products = [],shipping_required } = req.body;
 
   let url = "/orders";
   try {
     const datatoSend = {
       order: {
         status: status,
-        shipping_required: false,
+        shipping_required: shipping_required,
         customer: {
           id: customerID,
         },
         products: products,
       },
     };
+    const { data, status:statusResponse = 200 } = await jumpsaleApi.post(
+      `${url}.json`,
+      datatoSend
+    );
+    const formatedResponse = responseFormater({
+      code: statusResponse,
+      data: data.order,
+    });
+    res.status(formatedResponse.meta.statusCode).json(formatedResponse);
+  } catch (error) {
+    next({
+      statusCode: 500,
+      message: error.message,
+      type: "E_ERROR",
+    });
+  }
+};
+
+//promotions
+/**
+ * get a promotion
+ *
+ */
+JumpsellerController.getPromotion = async (req, res, next) => {
+
+ const {id} = req.params
+  let url = `/promotions/${id}`;
+  try {
+    //configuration of the target
+    const { data, status = 200 } = await jumpsaleApi.get(
+      `${url}.json`,
+    );
+    const formatedResponse = responseFormater({
+      code: status,
+      data: data.promotion,
+    });
+    res.status(formatedResponse.meta.statusCode).json(formatedResponse);
+  } catch (error) {
+    next({
+      statusCode: 500,
+      message: error.message,
+      type: "E_ERROR",
+    });
+  }
+};
+/**
+ * Create a promotion
+ *
+ */
+JumpsellerController.setPromotion = async (req, res, next) => {
+  const {
+    target = "categories",
+    name = "",
+    type = "percentage",
+    value = 0,
+    products,
+    categories,
+    conditions = {
+      type: "none",
+      value: 0,
+    },
+    last = {
+      type: "none",
+      begins_at: "",
+      expires_at: "",
+      max_times_used: 0,
+    },
+    cuponCode = "",
+    customer_categories = [],
+    customers = "categories",
+    maxUsage = 0,
+    cumulative = false,
+    quantity_x,
+    products_x,
+  } = req.body;
+
+  let url = "/promotions";
+  try {
+    const datatoSend = {
+      promotion: {
+        name: name,
+        enabled: true,
+        discount_target: target,
+        buys_at_least: conditions.type,
+        type,
+        lasts: last.type,
+        cumulative,
+        customers: customers,
+        customer_categories: customer_categories.map(id=>({
+          id:parseInt(id)
+        })),
+        coupons: [
+          {
+            code: cuponCode,
+            usage_limit: maxUsage,
+          },
+        ],
+      },
+    };
+    //configuration of the target
+
+    if (target === "categories") {
+      if (categories) datatoSend.promotion.categories = categories.map(id=>({
+        id:parseInt(id)
+      }));
+      if (products) datatoSend.promotion.products = products.map(id=>({
+        id:parseInt(id)
+      }));
+    }
+    if (target === "buy_x_get_y") {
+      datatoSend.promotion.quantity_x = quantity_x;
+      datatoSend.promotion.products_x = products_x;
+    }
+    //configuration of the type of discount
+    if (type === "percentage") {
+      datatoSend.promotion.discount_amount_percent = value;
+    } else if (type === "fix") {
+      datatoSend.promotion.discount_amount_fix = value;
+    }
+    //configuration of the activate contidions
+    if (conditions.type === "price") {
+      datatoSend.promotion.condition_price = conditions.value;
+    } else if (
+      conditions.type === "buys_at_least" ||
+      conditions.type === "qty" ||
+      conditions.type === "single_item"
+    ) {
+      datatoSend.promotion.condition_qty = conditions.value;
+    }
+    //configuration of the expires conditions
+    if (last.type === "date") {
+      if (last.begins_at) {
+        datatoSend.promotion.begins_at = last.begins_at;
+      }
+      if (last.expires_at) {
+        datatoSend.promotion.expires_at = last.expires_at;
+      }
+    } else if (last.type === "max_times_used") {
+      datatoSend.promotion.max_times_used = last.max_times_used;
+    } else if (last.type === "both") {
+      if (last.begins_at) {
+        datatoSend.promotion.begins_at = last.begins_at;
+      }
+      if (last.expires_at) {
+        datatoSend.promotion.expires_at = last.expires_at;
+      }
+      datatoSend.promotion.max_times_used = last.max_times_used;
+    }
+
     const { data, status = 200 } = await jumpsaleApi.post(
+      `${url}.json`,
+      datatoSend
+    );
+    const formatedResponse = responseFormater({
+      code: status,
+      data: data.promotion,
+    });
+    res.status(formatedResponse.meta.statusCode).json(formatedResponse);
+  } catch (error) {
+    next({
+      statusCode: 500,
+      message: error.message,
+      type: "E_ERROR",
+    });
+  }
+};
+/**
+ * Update a promotion
+ *
+ */
+JumpsellerController.updatePromotionByID = async (req, res, next) => {
+  const { id } = req.params;
+  const {
+    target,
+    name,
+    enabled,
+    type,
+    value,
+    products,
+    categories,
+    conditions ,
+    last,
+    cumulative,
+    quantity_x,
+    products_x,
+  } = req.body;
+
+  let url = `/promotions/${id}`;
+  try {
+    const datatoSend = {
+      promotion: {
+      },
+    };
+    if (cumulative) {
+      datatoSend.promotion.cumulative = cumulative;
+    }
+    if (name) {
+      datatoSend.promotion.name = name;
+    }
+    if (enabled) {
+      datatoSend.promotion.enabled = enabled;
+    }
+    //configuration of the target
+    if(target) {
+      datatoSend.promotion.discount_target = target;
+      if (target === "categories") {
+        if (categories) datatoSend.promotion.categories = categories;
+        if (products) datatoSend.promotion.products = products;
+      }
+      if (target === "buy_x_get_y") {
+        datatoSend.promotion.quantity_x = quantity_x;
+        datatoSend.promotion.products_x = products_x;
+      }
+    }
+    //configuration of the type of discount
+    if (type) {
+      datatoSend.promotion.type = type;
+      if (type === "percentage") {
+        datatoSend.promotion.discount_amount_percent = value;
+      } else if (type === "fix") {
+        datatoSend.promotion.discount_amount_fix = value;
+      }
+    }
+    //configuration of the activate contidions
+    if (conditions.type) {
+      datatoSend.promotion.buys_at_least = conditions.type;
+      if (conditions.type === "price") {
+        datatoSend.promotion.condition_price = conditions.value;
+      } else if (
+        conditions.type === "buys_at_least" ||
+        conditions.type === "qty" ||
+        conditions.type === "single_item"
+      ) {
+        datatoSend.promotion.condition_qty = conditions.value;
+      }
+    }
+    //configuration of the expires conditions
+
+    if (last.type) {
+      datatoSend.promotion.lasts = last.type;
+      if (last.type === "date") {
+        if (last.begins_at) {
+          datatoSend.promotion.begins_at = last.begins_at;
+        }
+        if (last.expires_at) {
+          datatoSend.promotion.expires_at = last.expires_at;
+        }
+      } else if (last.type === "max_times_used") {
+        datatoSend.promotion.max_times_used = last.max_times_used;
+      } else if (last.type === "both") {
+        if (last.begins_at) {
+          datatoSend.promotion.begins_at = last.begins_at;
+        }
+        if (last.expires_at) {
+          datatoSend.promotion.expires_at = last.expires_at;
+        }
+        datatoSend.promotion.max_times_used = last.max_times_used;
+      }
+    }
+
+    const { data, status = 200 } = await jumpsaleApi.put(
       `${url}.json`,
       datatoSend
     );
