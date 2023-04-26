@@ -337,7 +337,7 @@ JumpsellerController.setJumpsellerCustomer = async (req, res, next) => {
     surname,
     shipping_address,
     billing_address,
-    customer_category=[]
+    customer_category = [],
   } = req.body;
   let url = "/customers";
   try {
@@ -349,7 +349,8 @@ JumpsellerController.setJumpsellerCustomer = async (req, res, next) => {
         name,
         surname,
         status: "approved",
-        customer_category: customer_category.map(it=>(parseInt(it))),
+        customer_category: customer_category.map((it) => parseInt(it)),
+        customer_categories: customer_category.map((it) => parseInt(it)),
       },
     };
     /*
@@ -383,13 +384,30 @@ JumpsellerController.setJumpsellerCustomer = async (req, res, next) => {
     if (shipping_address) {
       datatoSend.customer.shipping_address = shipping_address;
     }
+    if (customer_category) {
+      datatoSend.customer.customer_category = customer_category.map((i) =>
+        parseInt(i)
+      );
+      datatoSend.customer.customer_categories = customer_category.map((i) =>
+        parseInt(i)
+      );
+    }
     const { data, status = 200 } = await jumpsaleApi.post(
       `${url}.json`,
       datatoSend
     );
+
+    const { data: dataUpdated } = await jumpsaleApi.put(
+      `${url}/${data.customer.id}.json`,
+      {
+        customer: {
+          customer_category: customer_category.map((i) => parseInt(i)),
+        },
+      }
+    );
     const formatedResponse = responseFormater({
       code: status,
-      data: data.customer,
+      data: dataUpdated.customer,
     });
     res.status(formatedResponse.meta.statusCode).json(formatedResponse);
   } catch (error) {
@@ -405,12 +423,21 @@ JumpsellerController.setJumpsellerCustomer = async (req, res, next) => {
  *
  */
 JumpsellerController.updateJumpsellerCustomer = async (req, res, next) => {
-  const { phone, name, surname, shipping_address, billing_address,customer_category } = req.body;
+  const {
+    phone,
+    name,
+    surname,
+    shipping_address,
+    billing_address,
+    customer_category,
+  } = req.body;
   const { id } = req.params;
   let url = `/customers/${id}`;
   try {
     const datatoSend = {
-      customer: {},
+      customer: {
+        status: "approved",
+      },
     };
     if (phone) {
       datatoSend.customer.phone = phone;
@@ -428,7 +455,12 @@ JumpsellerController.updateJumpsellerCustomer = async (req, res, next) => {
       datatoSend.customer.shipping_address = shipping_address;
     }
     if (customer_category) {
-      datatoSend.customer.customer_category = customer_category.map(i=>(parseInt(i)));
+      datatoSend.customer.customer_category = customer_category.map((i) =>
+        parseInt(i)
+      );
+      datatoSend.customer.customer_categories = customer_category.map((i) =>
+        parseInt(i)
+      );
     }
     const { data, status = 200 } = await jumpsaleApi.put(
       `${url}.json`,
@@ -449,59 +481,83 @@ JumpsellerController.updateJumpsellerCustomer = async (req, res, next) => {
 };
 //orders-------------------------------------------------------------------------------------------------------------
 
-
 /**
  * get a order
  *
  */
 JumpsellerController.getOrder = async (req, res, next) => {
-
-  const {id} = req.params
-   let url = `/orders/${id}`;
-   try {
-     //configuration of the target
-     const { data, status = 200 } = await jumpsaleApi.get(
-       `${url}.json`,
-     );
-     const formatedResponse = responseFormater({
-       code: status,
-       data: data.order,
-     });
-     res.status(formatedResponse.meta.statusCode).json(formatedResponse);
-   } catch (error) {
-     next({
-       statusCode: 500,
-       message: error.message,
-       type: "E_ERROR",
-     });
-   }
- };
+  const { id } = req.params;
+  let url = `/orders/${id}`;
+  try {
+    //configuration of the target
+    const { data, status = 200 } = await jumpsaleApi.get(`${url}.json`);
+    const formatedResponse = responseFormater({
+      code: status,
+      data: data.order,
+    });
+    res.status(formatedResponse.meta.statusCode).json(formatedResponse);
+  } catch (error) {
+    next({
+      statusCode: 500,
+      message: error.message,
+      type: "E_ERROR",
+    });
+  }
+};
 /**
  * Create a order
  *
  */
 JumpsellerController.createOrderJumpseller = async (req, res, next) => {
-  const { status = "Pending Payment", customerID, products = [],shipping_required } = req.body;
+  const {
+    status = "Pending Payment",
+    customerID,
+    products = [],
+    coupons,
+    discount,
+  } = req.body;
 
   let url = "/orders";
   try {
     const datatoSend = {
       order: {
         status: status,
-        shipping_required: shipping_required,
+        shipping_required: false,
         customer: {
           id: customerID,
         },
         products: products,
       },
     };
+    /*
+    if(shipping_required) {
+    }*/
+
+    //obtenemos la informacion del usuario para confirmar que tenga direccion de envio
+
+    const { data: dataUser, status: statusUser = 200 } = await jumpsaleApi.get(
+      `/customers/${customerID}.json`
+    );
+
+    if (dataUser?.customer?.shipping_addresses?.length > 0) {
+      datatoSend.order.shipping_required = true;
+      datatoSend.order.shipping_method_id = 220805;
+    }
+    if (coupons) {
+      datatoSend.order.coupons = coupons;
+    }
+    if (discount) {
+      datatoSend.order.discount = discount;
+    }
+    /*
     const { data, status:statusResponse = 200 } = await jumpsaleApi.post(
       `${url}.json`,
       datatoSend
     );
+    */
     const formatedResponse = responseFormater({
-      code: statusResponse,
-      data: data.order,
+      code: 22, //statusResponse,
+      data: "", //data.order,
     });
     res.status(formatedResponse.meta.statusCode).json(formatedResponse);
   } catch (error) {
@@ -519,14 +575,11 @@ JumpsellerController.createOrderJumpseller = async (req, res, next) => {
  *
  */
 JumpsellerController.getPromotion = async (req, res, next) => {
-
- const {id} = req.params
+  const { id } = req.params;
   let url = `/promotions/${id}`;
   try {
     //configuration of the target
-    const { data, status = 200 } = await jumpsaleApi.get(
-      `${url}.json`,
-    );
+    const { data, status = 200 } = await jumpsaleApi.get(`${url}.json`);
     const formatedResponse = responseFormater({
       code: status,
       data: data.promotion,
@@ -583,8 +636,8 @@ JumpsellerController.setPromotion = async (req, res, next) => {
         lasts: last.type,
         cumulative,
         customers: customers,
-        customer_categories: customer_categories.map(id=>({
-          id:parseInt(id)
+        customer_categories: customer_categories.map((id) => ({
+          id: parseInt(id),
         })),
         coupons: [
           {
@@ -597,12 +650,14 @@ JumpsellerController.setPromotion = async (req, res, next) => {
     //configuration of the target
 
     if (target === "categories") {
-      if (categories) datatoSend.promotion.categories = categories.map(id=>({
-        id:parseInt(id)
-      }));
-      if (products) datatoSend.promotion.products = products.map(id=>({
-        id:parseInt(id)
-      }));
+      if (categories)
+        datatoSend.promotion.categories = categories.map((id) => ({
+          id: parseInt(id),
+        }));
+      if (products)
+        datatoSend.promotion.products = products.map((id) => ({
+          id: parseInt(id),
+        }));
     }
     if (target === "buy_x_get_y") {
       datatoSend.promotion.quantity_x = quantity_x;
@@ -675,7 +730,7 @@ JumpsellerController.updatePromotionByID = async (req, res, next) => {
     value,
     products,
     categories,
-    conditions ,
+    conditions,
     last,
     cumulative,
     quantity_x,
@@ -685,8 +740,7 @@ JumpsellerController.updatePromotionByID = async (req, res, next) => {
   let url = `/promotions/${id}`;
   try {
     const datatoSend = {
-      promotion: {
-      },
+      promotion: {},
     };
     if (cumulative) {
       datatoSend.promotion.cumulative = cumulative;
@@ -698,7 +752,7 @@ JumpsellerController.updatePromotionByID = async (req, res, next) => {
       datatoSend.promotion.enabled = enabled;
     }
     //configuration of the target
-    if(target) {
+    if (target) {
       datatoSend.promotion.discount_target = target;
       if (target === "categories") {
         if (categories) datatoSend.promotion.categories = categories;
