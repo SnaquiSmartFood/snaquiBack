@@ -45,6 +45,51 @@ JumpsellerController.getProducts = async (req, res, next) => {
     });
   }
 };
+/**
+ * Search paginate list of jumpseller products the filters could be all, status or categories
+ *
+ */
+JumpsellerController.getProductsFiltered = async (req, res, next) => {
+  const { companyID } = req.params;
+  const { /*status, */ category } = req.query;
+  const pageNumber = parseInt(req.query.page?.number || 1);
+  const numberitemsInPage = parseInt(req.query.page?.size || 50);
+  let url = `/products/category/${companyID}`;
+  try {
+    const { data, status } = await jumpsaleApi.get(`${url}.json`, {
+      params: {
+        page: pageNumber,
+        limit: numberitemsInPage,
+      },
+    });
+    const filteredItems = [...data].filter((pro) => {
+      const exist = category
+        ? pro.product.categories.findIndex(
+            (cat) => `${cat.id}` === `${category}`
+          )
+        : 1;
+      //const statusProduct = pro.product.status === status
+      return exist >= 0;
+    });
+    const formatedResponse = responseFormater({
+      code: status,
+      data: filteredItems,
+      meta: {
+        last: filteredItems.length === 0,
+        page: {
+          "current-page": pageNumber,
+        },
+      },
+    });
+    res.status(formatedResponse.meta.statusCode).json(formatedResponse);
+  } catch (error) {
+    next({
+      statusCode: 500,
+      message: error.message,
+      type: "E_ERROR",
+    });
+  }
+};
 //obtener lugares por cercania para recomendaciones
 /**
  * Get the information of a jumpseller product by id
@@ -549,15 +594,13 @@ JumpsellerController.createOrderJumpseller = async (req, res, next) => {
     if (discount) {
       datatoSend.order.discount = discount;
     }
-    /*
     const { data, status:statusResponse = 200 } = await jumpsaleApi.post(
       `${url}.json`,
       datatoSend
     );
-    */
     const formatedResponse = responseFormater({
-      code: 22, //statusResponse,
-      data: "", //data.order,
+      code: statusResponse,
+      data: data.order,
     });
     res.status(formatedResponse.meta.statusCode).json(formatedResponse);
   } catch (error) {

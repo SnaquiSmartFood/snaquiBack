@@ -6,6 +6,7 @@ const JumpsellerRouter = Router({ mergeParams: true });
 /*CRUD de los lugares del usuario*/
 
 
+JumpsellerRouter.get('/products/filter/:companyID', JumpsellerController.getProductsFiltered);
 JumpsellerRouter.get('/products/:id', JumpsellerController.getProduct);
 JumpsellerRouter.put('/products/:id', JumpsellerController.updateProduct);
 JumpsellerRouter.get('/products', JumpsellerController.getProducts);
