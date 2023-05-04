@@ -560,6 +560,7 @@ JumpsellerController.createOrderJumpseller = async (req, res, next) => {
     products = [],
     coupons,
     discount,
+    shipping=true
   } = req.body;
 
   let url = "/orders";
@@ -583,10 +584,37 @@ JumpsellerController.createOrderJumpseller = async (req, res, next) => {
     const { data: dataUser, status: statusUser = 200 } = await jumpsaleApi.get(
       `/customers/${customerID}.json`
     );
-
+    if (dataUser?.customer?.billing_addresses?.length > 0) {
+      const billing_address = {...dataUser?.customer?.billing_addresses[0]}
+    
+      const { data: MunicipalitiesData} = await jumpsaleApi.get(
+        `/countries/${billing_address.country}/regions/${billing_address.region}/municipalities`
+      );
+      const codeMunicipality = MunicipalitiesData.find((municipality)=>{
+        return municipality.name===billing_address.municipality
+      })
+      billing_address.municipality= codeMunicipality.code
+      datatoSend.order.customer.billing_address =billing_address
+    }
     if (dataUser?.customer?.shipping_addresses?.length > 0) {
-      datatoSend.order.shipping_required = true;
-      datatoSend.order.shipping_method_id = 220805;
+      if(shipping){
+        datatoSend.order.shipping_required = true;
+        datatoSend.order.shipping_method_id = 220805;
+      }
+      
+      const shipping_address = {...dataUser?.customer?.shipping_addresses[0]}
+    
+      const { data: MunicipalitiesData} = await jumpsaleApi.get(
+        `/countries/${shipping_address.country}/regions/${shipping_address.region}/municipalities`
+      );
+      const codeMunicipality = MunicipalitiesData.find((municipality)=>{
+        return municipality.name===shipping_address.municipality
+      })
+      shipping_address.municipality= codeMunicipality.code
+      datatoSend.order.customer.shipping_address = shipping_address
+      if (!datatoSend.order.customer?.billing_address) {
+        datatoSend.order.customer.billing_address = shipping_address
+      }
     }
     if (coupons) {
       datatoSend.order.coupons = coupons;
@@ -594,6 +622,16 @@ JumpsellerController.createOrderJumpseller = async (req, res, next) => {
     if (discount) {
       datatoSend.order.discount = discount;
     }
+    if(datatoSend.order.shipping_required){
+      datatoSend.order.status="Pending Payment"
+    }
+    if (status === "Paid" && !datatoSend?.order?.customer?.billing_address) {
+      return next({
+        statusCode: 500,
+        message: "no posee direccion de envio",
+        type: "NO_SHIPPING_ADDRESS",
+      });
+    } 
     const { data, status:statusResponse = 200 } = await jumpsaleApi.post(
       `${url}.json`,
       datatoSend
