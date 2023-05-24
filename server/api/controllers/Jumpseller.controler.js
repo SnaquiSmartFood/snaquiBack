@@ -555,11 +555,10 @@ JumpsellerController.getOrder = async (req, res, next) => {
  */
 JumpsellerController.createOrderJumpseller = async (req, res, next) => {
   const {
-    status = "Pending Payment",
+    status,
     customerID,
     products = [],
     coupons,
-    discount,
     shipping=true
   } = req.body;
 
@@ -567,7 +566,7 @@ JumpsellerController.createOrderJumpseller = async (req, res, next) => {
   try {
     const datatoSend = {
       order: {
-        status: status,
+        status:status,
         shipping_required: false,
         customer: {
           id: customerID,
@@ -575,9 +574,6 @@ JumpsellerController.createOrderJumpseller = async (req, res, next) => {
         products: products,
       },
     };
-    /*
-    if(shipping_required) {
-    }*/
 
     //obtenemos la informacion del usuario para confirmar que tenga direccion de envio
 
@@ -619,9 +615,6 @@ JumpsellerController.createOrderJumpseller = async (req, res, next) => {
     if (coupons) {
       datatoSend.order.coupons = coupons;
     }
-    if (discount) {
-      datatoSend.order.discount = discount;
-    }
     if(datatoSend.order.shipping_required){
       datatoSend.order.status="Pending Payment"
     }
@@ -633,6 +626,40 @@ JumpsellerController.createOrderJumpseller = async (req, res, next) => {
       });
     } 
     const { data, status:statusResponse = 200 } = await jumpsaleApi.post(
+      `${url}.json`,
+      datatoSend
+    );
+    const formatedResponse = responseFormater({
+      code: statusResponse,
+      data: data.order,
+    });
+    res.status(formatedResponse.meta.statusCode).json(formatedResponse);
+  } catch (error) {
+    next({
+      statusCode: 500,
+      message: error.message,
+      type: "E_ERROR",
+    });
+  }
+};
+/**
+ * update a order status
+ *
+ */
+JumpsellerController.updateStatusOrderJumpseller = async (req, res, next) => {
+  const {
+    status,
+  } = req.body;
+const {id} = req.params
+let url = `/orders/${id}`;
+try {
+  //configuration of the target
+    const datatoSend = {
+      order: {
+        status:status,
+      },
+    };
+    const { data, status:statusResponse = 200 } = await jumpsaleApi.put(
       `${url}.json`,
       datatoSend
     );

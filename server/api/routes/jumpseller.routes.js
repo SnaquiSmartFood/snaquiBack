@@ -21,6 +21,7 @@ JumpsellerRouter.get('/customers', JumpsellerController.getJumpsellerCustomer);
 JumpsellerRouter.post('/customers', JumpsellerController.setJumpsellerCustomer);
 
 JumpsellerRouter.get('/orders/:id', JumpsellerController.getOrder);
+JumpsellerRouter.put('/orders/:id', JumpsellerController.updateStatusOrderJumpseller);
 JumpsellerRouter.post('/orders', JumpsellerController.createOrderJumpseller);
 
 //https://api.jumpseller.com/v1/countries/{country_code}/regions/{region_code}/municipalities.json
